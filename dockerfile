@@ -2,8 +2,11 @@ FROM eclipse-temurin:17-jdk
 
 WORKDIR /app
 
-COPY . .
+COPY pom.xml .
+COPY src ./src
 
-RUN ./mvnw clean package -DskipTests
+RUN apt-get update && apt-get install -y maven
+
+RUN mvn -q -e -DskipTests clean package
 
 CMD ["java", "-jar", "target/*.jar"]
