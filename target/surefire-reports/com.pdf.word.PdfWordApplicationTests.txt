@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.pdf.word.PdfWordApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.036 s -- in com.pdf.word.PdfWordApplicationTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.772 s -- in com.pdf.word.PdfWordApplicationTests
