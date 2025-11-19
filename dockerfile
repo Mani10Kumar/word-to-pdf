@@ -9,4 +9,8 @@ RUN apt-get update && apt-get install -y maven
 
 RUN mvn -q -e -DskipTests clean package
 
-CMD ["java", "-jar", "target/*.jar"]
+# Rename your jar to a fixed name inside Docker
+RUN cp target/*.jar app.jar
+
+CMD ["java", "-jar", "app.jar"]
+
