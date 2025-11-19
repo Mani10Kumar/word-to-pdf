@@ -7,6 +7,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -17,7 +18,7 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api")
 public class ImageToPdfController {
 
-    @PostMapping("/imagetopdf")
+	@GetMapping("/imagetopdf")
     public byte[] convertImageToPdf(@RequestParam("file") MultipartFile imageFile) throws IOException {
 
         // Create PDF document
