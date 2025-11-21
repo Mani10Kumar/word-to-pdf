@@ -18,31 +18,36 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api")
 public class PdfToWordController {
 
-    @PostMapping("/pdftoword")
-    public byte[] convertPdfToWord(@RequestParam("file") MultipartFile pdfFile) throws IOException {
-        // Load PDF document
-        PDDocument document = PDDocument.load(pdfFile.getInputStream());
+	@PostMapping(
+		    value = "/pdf-to-word",
+		    consumes = "multipart/form-data",
+		    produces = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+		)
+		public byte[] convertPdfToWord(@RequestParam("file") MultipartFile file) throws Exception {
 
-        // Extract text from PDF
-        PDFTextStripper stripper = new PDFTextStripper();
-        String text = stripper.getText(document);
+		    ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-        // Create Word document
-        XWPFDocument wordDocument = new XWPFDocument();
-        XWPFParagraph paragraph = wordDocument.createParagraph();
-        XWPFRun run = paragraph.createRun();
-        run.setText(text);
+		    // Read PDF
+		    PDDocument pdfDoc = PDDocument.load(file.getInputStream());
+		    PDFTextStripper stripper = new PDFTextStripper();
+		    String text = stripper.getText(pdfDoc);
+		    pdfDoc.close();
 
-        // Write Word document to output stream
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        wordDocument.write(out);
+		    // Create Word doc
+		    XWPFDocument wordDoc = new XWPFDocument();
 
-        // Clean up
-        document.close();
-        wordDocument.close();
-        out.close();
+		    // Split lines and add properly
+		    for (String line : text.split("\n")) {
+		        XWPFParagraph p = wordDoc.createParagraph();
+		        XWPFRun run = p.createRun();
+		        run.setText(line);
+		    }
 
-        return out.toByteArray();
-    }
+		    wordDoc.write(out);
+		    wordDoc.close();
+
+		    return out.toByteArray();
+		}
+
+
 }
-//localhost:8085/api/convert

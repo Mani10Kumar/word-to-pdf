@@ -1,11 +1,12 @@
 package com.pdf.word;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.util.List;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,41 +18,58 @@ import org.springframework.web.multipart.MultipartFile;
 @RequestMapping("/api")
 public class ImageToPdfController {
 
-	@PostMapping("/imagetopdf")
-    public byte[] convertImageToPdf(@RequestParam("file") MultipartFile imageFile) throws IOException {
+    @PostMapping(
+        value = "/image-to-pdf",
+        consumes = "multipart/form-data",
+        produces = "application/pdf"
+    )
+    public byte[] convertImagesToPdf(@RequestParam("files") List<MultipartFile> files) throws Exception {
 
-        // Create PDF document
+        if (files == null || files.isEmpty()) {
+            throw new RuntimeException("Please upload at least one image.");
+        }
+
         PDDocument document = new PDDocument();
-        PDPage page = new PDPage();
-        document.addPage(page);
 
-        // Load image into PDF
-        PDImageXObject pdImage = PDImageXObject.createFromByteArray(document, imageFile.getBytes(), null);
+        for (MultipartFile file : files) {
 
-        // Add image to PDF page
-        PDPageContentStream contentStream = new PDPageContentStream(document, page);
+            PDImageXObject image = PDImageXObject.createFromByteArray(
+                    document,
+                    file.getBytes(),
+                    file.getOriginalFilename()
+            );
 
-        // Fit the image to full page size
-        float pageWidth = page.getMediaBox().getWidth();
-        float pageHeight = page.getMediaBox().getHeight();
+            // Create new page for each image
+            PDPage page = new PDPage(PDRectangle.A4);
+            document.addPage(page);
 
-        contentStream.drawImage(pdImage, 0, 0, pageWidth, pageHeight);
-        contentStream.close();
+            PDPageContentStream content = new PDPageContentStream(document, page);
 
-        // Output stream
+            float pageWidth = page.getMediaBox().getWidth();
+            float pageHeight = page.getMediaBox().getHeight();
+
+            float imgWidth = image.getWidth();
+            float imgHeight = image.getHeight();
+
+            // Maintain aspect ratio (fit image to page)
+            float scale = Math.min(pageWidth / imgWidth, pageHeight / imgHeight);
+
+            float finalWidth = imgWidth * scale;
+            float finalHeight = imgHeight * scale;
+
+            // Center the image
+            float x = (pageWidth - finalWidth) / 2;
+            float y = (pageHeight - finalHeight) / 2;
+
+            // Draw image on page
+            content.drawImage(image, x, y, finalWidth, finalHeight);
+            content.close();
+        }
+
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         document.save(out);
-
-        // Cleanup
         document.close();
-        out.close();
 
         return out.toByteArray();
     }
 }
-//localhost:8080/api/imagetopdf
-//
-
-
-
-
