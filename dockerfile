@@ -1,16 +1,18 @@
-FROM eclipse-temurin:17-jdk
+FROM openjdk:17-jdk-slim
 
+# Install LibreOffice + fonts
+RUN apt-get update && \
+    apt-get install -y libreoffice fonts-dejavu fonts-liberation && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# App directory
 WORKDIR /app
 
-COPY pom.xml .
-COPY src ./src
+# Copy built jar file
+COPY target/pdfconverter.jar app.jar
 
-RUN apt-get update && apt-get install -y maven
+# Expose port
+EXPOSE 8080
 
-RUN mvn -q -e -DskipTests clean package
-
-# Rename your jar to a fixed name inside Docker
-RUN cp target/*.jar app.jar
-
+# Start application
 CMD ["java", "-jar", "app.jar"]
-

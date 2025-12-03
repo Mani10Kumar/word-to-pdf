@@ -1,55 +1,118 @@
+//package com.pdf.word;
+//
+//import java.io.File;
+//import java.nio.file.Files;
+//
+//import org.jodconverter.core.document.DefaultDocumentFormatRegistry;
+//import org.jodconverter.local.LocalConverter;
+//import org.jodconverter.local.office.LocalOfficeManager;
+//import org.springframework.beans.factory.annotation.Autowired;
+//import org.springframework.http.MediaType;
+//import org.springframework.http.ResponseEntity;
+//import org.springframework.web.bind.annotation.*;
+//import org.springframework.web.multipart.MultipartFile;
+//
+//@RestController
+//@RequestMapping("/api")
+//@CrossOrigin(origins = "*")
+//public class PdfToWordController {
+//
+//    @Autowired
+//    private LocalOfficeManager officeManager;
+//
+//    @PostMapping(
+//            value = "/pdf-to-word",
+//            consumes = "multipart/form-data",
+//            produces = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+//    )
+//    public ResponseEntity<byte[]> convertPdfToWord(@RequestParam("file") MultipartFile file) throws Exception {
+//
+//        // Temp PDF file
+//        File inputFile = File.createTempFile("input", ".pdf");
+//        file.transferTo(inputFile);
+//
+//        // Temp DOCX output file
+//        File outputFile = File.createTempFile("output", ".docx");
+//
+//        try {
+//            // Convert using LibreOffice (JODConverter)
+//            LocalConverter
+//                    .builder()
+//                    .officeManager(officeManager)
+//                    .build()
+//                    .convert(inputFile)
+//                    .to(outputFile)
+//                    .execute();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            throw new RuntimeException("PDF to Word conversion failed: " + e.getMessage());
+//        }
+//
+//        // Read bytes
+//        byte[] wordBytes = Files.readAllBytes(outputFile.toPath());
+//
+//        // Delete temp files
+//        inputFile.delete();
+//        outputFile.delete();
+//
+//        return ResponseEntity.ok()
+//                .header("Content-Disposition", "attachment; filename=converted.docx")
+//                .contentType(MediaType.parseMediaType(
+//                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+//                .body(wordBytes);
+//    }
+//
+//}
+
+
 package com.pdf.word;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.File;
+import java.nio.file.Files;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
-import org.apache.poi.xwpf.usermodel.XWPFRun;
-import org.springframework.web.bind.annotation.CrossOrigin;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.aspose.pdf.Document;
+import com.aspose.pdf.SaveFormat;
 
 @RestController
 @RequestMapping("/api")
 @CrossOrigin(origins = "*")
 public class PdfToWordController {
 
-	@PostMapping(
-		    value = "/pdf-to-word",
-		    consumes = "multipart/form-data",
-		    produces = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-		)
-		public byte[] convertPdfToWord(@RequestParam("file") MultipartFile file) throws Exception {
+    @PostMapping(
+        value = "/pdf-to-word",
+        consumes = "multipart/form-data",
+        produces = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    )
+    public ResponseEntity<byte[]> convertPdfToWord(@RequestParam("file") MultipartFile file) throws Exception {
 
-		    ByteArrayOutputStream out = new ByteArrayOutputStream();
+        // Save uploaded PDF to a temporary file
+        File inputFile = File.createTempFile("input-", ".pdf");
+        file.transferTo(inputFile);
 
-		    // Read PDF
-		    PDDocument pdfDoc = PDDocument.load(file.getInputStream());
-		    PDFTextStripper stripper = new PDFTextStripper();
-		    String text = stripper.getText(pdfDoc);
-		    pdfDoc.close();
+        // Create temp output DOCX file
+        File outputFile = File.createTempFile("output-", ".docx");
 
-		    // Create Word doc
-		    XWPFDocument wordDoc = new XWPFDocument();
+        // Convert PDF to Word using Aspose
+        Document pdfDocument = new Document(inputFile.getAbsolutePath());
+        pdfDocument.save(outputFile.getAbsolutePath(), SaveFormat.DocX);
 
-		    // Split lines and add properly
-		    for (String line : text.split("\n")) {
-		        XWPFParagraph p = wordDoc.createParagraph();
-		        XWPFRun run = p.createRun();
-		        run.setText(line);
-		    }
+        // Read output bytes
+        byte[] docBytes = Files.readAllBytes(outputFile.toPath());
 
-		    wordDoc.write(out);
-		    wordDoc.close();
+        // Clean up temp files
+        inputFile.delete();
+        outputFile.delete();
 
-		    return out.toByteArray();
-		}
-
-
+        // Return as response
+        return ResponseEntity.ok()
+                .header("Content-Disposition", "attachment; filename=converted.docx")
+                .contentType(MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"))
+                .body(docBytes);
+    }
 }
