@@ -5,13 +5,18 @@ FROM eclipse-temurin:17-jdk as builder
 
 WORKDIR /app
 
-# Copy Maven files first
+# Install Maven
+RUN apt-get update && \
+    apt-get install -y maven && \
+    apt-get clean
+
+# Copy project files
 COPY pom.xml .
 COPY src ./src
 
-# Build JAR using Maven wrapper if exists, else use system Maven
-RUN chmod +x mvnw || true
-RUN ./mvnw -q -DskipTests package || mvn -q -DskipTests package
+# Build JAR
+RUN mvn -q -DskipTests package
+
 
 # ======================
 # 2. RUNTIME STAGE
